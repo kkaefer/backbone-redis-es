@@ -69,7 +69,7 @@ describe('CRUD workflow', function() {
     it('should fail to load the deleted model', function(done) {
         new Customer({ id: customer.id }).fetch({
             error: function(model, err) {
-                assert.equal(err.message, 'Model does not exist');
+                assert.equal(err.message, 'Model does not exist: ' + model.name + ':' + customer.id);
                 done();
             },
             success: function(model) {
@@ -78,12 +78,6 @@ describe('CRUD workflow', function() {
         });
     });
 
-    after(function(done) {
-        customer.destroy({
-            error: error,
-            success: done.bind(null, null)
-        });
-    });
 }); // end "CRUD workflow"
 
 
@@ -157,7 +151,98 @@ describe('collections', function() {
             });
         }, done);
     });
-});
+});  // end "collections"
 
+
+describe('lookup by property', function() {
+    var data = [
+        new Customer({ name: "Ferdinand Müller", priority: 1, address: 'Berlin' }),
+        new Customer({ name: "Anke Müller", priority: 1, address: 'Berlin' }),
+        new Customer({ name: "Peter Müller", priority: 1, address: 'Dresden' })
+    ];
+
+    var customers = new Customers;
+
+    it('should save the entire collection', function(done) {
+        async.forEach(data, function(model, done) {
+            model.save(null, {
+                error: function(model, err) { done(err); },
+                success: function(model, resp) { done(); }
+            });
+        }, done);
+    });
+
+    it('should retrieve two customers', function(done) {
+        customers.fetch({
+            lookup: {
+                key: "address",
+                value: "Berlin"
+            },
+            error: error,
+            success: function(collection, resp) {
+                // TODO: Be sure about collection order
+                assert.deepEqual(
+                    collection.toJSON(),
+                    data.slice(0, 2).map(function(a) { return a.toJSON(); })
+                );
+                done();
+            }
+        });
+    });
+
+    it('should update lookups', function(done) {
+        var firstCustomer = customers.at(0);
+
+        firstCustomer.save({'address': 'Dortmund'}, {
+            success: function(){
+                customers.fetch({
+                    lookup: {
+                        key: "address",
+                        value: "Dortmund"
+                    },
+                    error: error,
+                    success: function(collection, resp){
+                        assert.deepEqual(
+                            collection.toJSON(),
+                            [firstCustomer.toJSON()]
+                        );
+                        done();
+                    }
+                });
+            },
+            error: error
+        });
+    });
+
+    it('should fail to retrieve', function(done) {
+        customers.fetch({
+            lookup: {
+                key: "name",
+                value: "Ferdinand Müller"
+            },
+            error: function(model, err) {
+                assert.equal(err.message, 'Cannot lookup by property "name"');
+                done();
+            },
+            success: error
+        });
+    });
+
+    after(function(done) {
+        customers.fetch({
+            error: error,
+            success: function(collection, resp){
+                // clone collection.models: can't destroy models while
+                // iterating over collection!
+                async.forEach(_.clone(collection.models), function(model, done) {
+                    model.destroy({
+                        error: function(model, err) { done(err); },
+                        success: function(model, resp) { done(); }
+                    });
+                }, done);
+            }
+        });
+    });
+}); // end "lookup by property"
 
 }); // end "backbone redis"
