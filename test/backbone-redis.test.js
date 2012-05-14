@@ -1,11 +1,12 @@
 var assert = require('assert');
 var async = require('async');
+var _ = require('underscore');
 var Backbone = require('backbone');
 Backbone.sync = require('../lib/backbone-redis')();
 
 // Setup data model.
-var Customer = Backbone.Model.extend({ name: 'customer' });
-var Customers = Backbone.Collection.extend({ model: Customer })
+var Customer = Backbone.Model.extend({ name: 'customer', lookups: {address: true}});
+var Customers = Backbone.Collection.extend({ model: Customer });
 
 
 
@@ -39,7 +40,7 @@ describe('CRUD workflow', function() {
                 assert.deepEqual(model.attributes, customer.attributes);
                 done();
             }
-        })
+        });
     });
 
     it('should update a model', function(done) {
@@ -48,7 +49,7 @@ describe('CRUD workflow', function() {
         }, {
             error: error,
             success: function(model, resp) {
-                assert.equal(model.get('priority'), 1)
+                assert.equal(model.get('priority'), 1);
                 assert.equal(model.get('_rev'), 2);
                 done();
             }
@@ -124,7 +125,7 @@ describe('collections', function() {
         new Customer({ name: "Florian Hübner", priority: 3 })
     ];
 
-    var customers = new Customers;
+    var customers = new Customers();
 
     it('should save the entire collection', function(done) {
         async.forEach(data, function(model, done) {
@@ -141,7 +142,7 @@ describe('collections', function() {
             success: function(collection, resp) {
                 assert.deepEqual(
                     collection.toJSON(),
-                    data.map(function(a) { return a.toJSON() })
+                    data.map(function(a) { return a.toJSON(); })
                 );
                 done();
             }
