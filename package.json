@@ -1,7 +1,7 @@
 {
     "name": "backbone-redis-es",
     "version": "0.0.1",
-    "main": "./lib/backbone-redis-es",
+    "main": "./lib/backbone-redis",
 
     "dependencies": {
         "async": "~0.1.18",
