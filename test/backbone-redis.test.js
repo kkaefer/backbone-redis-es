@@ -2,7 +2,7 @@ var assert = require('assert');
 var async = require('async');
 var _ = require('underscore');
 var Backbone = require('backbone');
-Backbone.sync = require('..')();
+Backbone.sync = require('..')().sync;
 
 // Setup data model.
 var Customer = Backbone.Model.extend({ name: 'customer', lookups: {address: true}});
